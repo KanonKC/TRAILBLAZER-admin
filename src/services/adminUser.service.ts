@@ -10,10 +10,11 @@ export const listUsers = async (
     page: number,
     limit: number,
     search?: string,
-    tier?: number
+    tier?: number,
+    isShowcase?: boolean
 ): Promise<ListResponse<AdminUserRecord>> => {
     const response = await apiClient.get<ListResponse<AdminUserRecord>>("/api/v1/admin/users", {
-        params: { page, limit, search: search || undefined, tier: tier ?? undefined },
+        params: { page, limit, search: search || undefined, tier: tier ?? undefined, is_showcase: isShowcase ?? undefined },
     });
     return response.data;
 };

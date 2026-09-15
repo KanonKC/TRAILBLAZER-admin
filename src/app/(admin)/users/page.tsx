@@ -19,6 +19,12 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@
 const PAGE_SIZE = 20;
 const TIER_OPTIONS = [0, 1, 2, 3];
 const ALL_TIERS = "all";
+const SHOWCASE_OPTIONS = [
+    { value: "all", label: "All showcase" },
+    { value: "true", label: "Showcase" },
+    { value: "false", label: "Not showcase" },
+];
+const ALL_SHOWCASE = "all";
 
 export default function UsersPage() {
     const [users, setUsers] = useState<AdminUserRecord[]>([]);
@@ -27,17 +33,19 @@ export default function UsersPage() {
     const [isLoading, setIsLoading] = useState(true);
     const [search, setSearch] = useState("");
     const [tierFilter, setTierFilter] = useState(ALL_TIERS);
+    const [showcaseFilter, setShowcaseFilter] = useState(ALL_SHOWCASE);
     const debouncedSearch = useDebouncedValue(search, 300);
     const tier = tierFilter === ALL_TIERS ? undefined : Number(tierFilter);
+    const isShowcase = showcaseFilter === ALL_SHOWCASE ? undefined : showcaseFilter === "true";
 
     useEffect(() => {
         setPage(1);
-    }, [debouncedSearch, tierFilter]);
+    }, [debouncedSearch, tierFilter, showcaseFilter]);
 
     useEffect(() => {
         let cancelled = false;
         setIsLoading(true);
-        listUsers(page, PAGE_SIZE, debouncedSearch, tier)
+        listUsers(page, PAGE_SIZE, debouncedSearch, tier, isShowcase)
             .then((res) => {
                 if (cancelled) return;
                 setUsers(res.data);
@@ -52,7 +60,7 @@ export default function UsersPage() {
         return () => {
             cancelled = true;
         };
-    }, [page, debouncedSearch, tier]);
+    }, [page, debouncedSearch, tier, isShowcase]);
 
     const totalPages = Math.max(1, Math.ceil(total / PAGE_SIZE));
 
@@ -86,6 +94,18 @@ export default function UsersPage() {
                         ))}
                     </SelectContent>
                 </Select>
+                <Select value={showcaseFilter} onValueChange={setShowcaseFilter}>
+                    <SelectTrigger className="w-40">
+                        <SelectValue placeholder="Showcase" />
+                    </SelectTrigger>
+                    <SelectContent>
+                        {SHOWCASE_OPTIONS.map((opt) => (
+                            <SelectItem key={opt.value} value={opt.value}>
+                                {opt.label}
+                            </SelectItem>
+                        ))}
+                    </SelectContent>
+                </Select>
             </div>
 
             <div className="rounded-lg border">
@@ -96,19 +116,21 @@ export default function UsersPage() {
                             <TableHead>User ID</TableHead>
                             <TableHead>Twitch ID</TableHead>
                             <TableHead>Tier</TableHead>
+                            <TableHead>Showcase</TableHead>
+                            <TableHead>Widgets</TableHead>
                             <TableHead>Joined</TableHead>
                         </TableRow>
                     </TableHeader>
                     <TableBody>
                         {isLoading ? (
                             <TableRow>
-                                <TableCell colSpan={5} className="text-center text-muted-foreground py-8">
+                                <TableCell colSpan={7} className="text-center text-muted-foreground py-8">
                                     Loading…
                                 </TableCell>
                             </TableRow>
                         ) : users.length === 0 ? (
                             <TableRow>
-                                <TableCell colSpan={5} className="text-center text-muted-foreground py-8">
+                                <TableCell colSpan={7} className="text-center text-muted-foreground py-8">
                                     No users found
                                 </TableCell>
                             </TableRow>
@@ -140,6 +162,12 @@ export default function UsersPage() {
                                     <TableCell>
                                         <Badge variant={user.tier > 0 ? "default" : "secondary"}>Tier {user.tier}</Badge>
                                     </TableCell>
+                                    <TableCell>
+                                        <Badge variant={user.is_showcase ? "default" : "secondary"}>
+                                            {user.is_showcase ? "Showcase" : "No"}
+                                        </Badge>
+                                    </TableCell>
+                                    <TableCell className="text-muted-foreground">{user.widget_count}</TableCell>
                                     <TableCell className="text-muted-foreground">
                                         {formatDate(user.created_at)}
                                     </TableCell>

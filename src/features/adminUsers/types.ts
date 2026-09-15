@@ -13,6 +13,7 @@ export interface AdminUserRecord {
     consent_version: string | null;
     created_at: string;
     updated_at: string;
+    widget_count: number;
 }
 
 export interface AdminWidgetType {
