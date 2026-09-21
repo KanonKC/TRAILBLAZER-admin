@@ -5,8 +5,16 @@ import Link from "next/link";
 import { ArrowLeft } from "lucide-react";
 import { toast } from "sonner";
 
-import { getUser, getUserWidgets, getUserEventSubs, updateUserShowcase } from "@/services/adminUser.service";
-import { AdminUserRecord, AdminWidgetRecord, EventSubSubscription } from "@/features/adminUsers/types";
+import {
+    getUser,
+    getUserWidgets,
+    getUserEventSubs,
+    updateUserShowcase,
+    listTwitchEvents,
+    subscribeUserEvent,
+    unsubscribeUserEvent,
+} from "@/services/adminUser.service";
+import { AdminUserRecord, AdminWidgetRecord, EventSubSubscription, TwitchEventDefinition } from "@/features/adminUsers/types";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 import { Badge } from "@/components/ui/badge";
@@ -30,9 +38,11 @@ export default function UserDetailPage({ params }: { params: Promise<{ id: strin
     const [user, setUser] = useState<AdminUserRecord | null>(null);
     const [widgets, setWidgets] = useState<AdminWidgetRecord[]>([]);
     const [eventSubs, setEventSubs] = useState<EventSubSubscription[]>([]);
+    const [eventDefinitions, setEventDefinitions] = useState<TwitchEventDefinition[]>([]);
     const [isLoading, setIsLoading] = useState(true);
     const [eventSubsError, setEventSubsError] = useState<string | null>(null);
     const [isSavingShowcase, setIsSavingShowcase] = useState(false);
+    const [togglingEvent, setTogglingEvent] = useState<string | null>(null);
 
     useEffect(() => {
         let cancelled = false;
@@ -51,8 +61,10 @@ export default function UserDetailPage({ params }: { params: Promise<{ id: strin
             }
 
             try {
-                const eventSubsRes = await getUserEventSubs(id);
-                if (!cancelled) setEventSubs(eventSubsRes.data);
+                const [eventSubsRes, definitionsRes] = await Promise.all([getUserEventSubs(id), listTwitchEvents()]);
+                if (cancelled) return;
+                setEventSubs(eventSubsRes.data);
+                setEventDefinitions(definitionsRes.data);
             } catch {
                 if (!cancelled) setEventSubsError("Failed to load Twitch event subscriptions");
             }
@@ -88,6 +100,29 @@ export default function UserDetailPage({ params }: { params: Promise<{ id: strin
         }
     }
 
+    async function handleEventToggle(type: string, subscribe: boolean) {
+        if (!user) return;
+        setTogglingEvent(type);
+        try {
+            const res = subscribe ? await subscribeUserEvent(user.id, type) : await unsubscribeUserEvent(user.id, type);
+            setEventSubs(res.data);
+            toast.success(subscribe ? `Subscribed to ${type}` : `Unsubscribed from ${type}`);
+        } catch {
+            toast.error(subscribe ? `Failed to subscribe to ${type}` : `Failed to unsubscribe from ${type}`);
+        } finally {
+            setTogglingEvent(null);
+        }
+    }
+
+    const subsByType = new Map<string, EventSubSubscription>();
+    for (const sub of eventSubs) {
+        const existing = subsByType.get(sub.type);
+        if (!existing || (sub.status === "enabled" && existing.status !== "enabled")) {
+            subsByType.set(sub.type, sub);
+        }
+    }
+    const activeEventCount = eventDefinitions.filter((d) => subsByType.get(d.type)?.status === "enabled").length;
+
     return (
         <div className="space-y-4">
             <Button asChild variant="ghost" size="sm" className="-ml-2">
@@ -112,7 +147,9 @@ export default function UserDetailPage({ params }: { params: Promise<{ id: strin
                 <TabsList>
                     <TabsTrigger value="general">General Info</TabsTrigger>
                     <TabsTrigger value="widgets">Widgets ({widgets.length})</TabsTrigger>
-                    <TabsTrigger value="events">Twitch Events ({eventSubs.length})</TabsTrigger>
+                    <TabsTrigger value="events">
+                        Twitch Events ({activeEventCount}/{eventDefinitions.length})
+                    </TabsTrigger>
                 </TabsList>
 
                 <TabsContent value="general">
@@ -210,36 +247,52 @@ export default function UserDetailPage({ params }: { params: Promise<{ id: strin
                                     <TableHead>Status</TableHead>
                                     <TableHead>Version</TableHead>
                                     <TableHead>Created</TableHead>
+                                    <TableHead className="text-right">Subscribed</TableHead>
                                 </TableRow>
                             </TableHeader>
                             <TableBody>
                                 {eventSubsError ? (
                                     <TableRow>
-                                        <TableCell colSpan={4} className="text-center text-muted-foreground py-8">
+                                        <TableCell colSpan={5} className="text-center text-muted-foreground py-8">
                                             {eventSubsError}
                                         </TableCell>
                                     </TableRow>
-                                ) : eventSubs.length === 0 ? (
+                                ) : eventDefinitions.length === 0 ? (
                                     <TableRow>
-                                        <TableCell colSpan={4} className="text-center text-muted-foreground py-8">
-                                            No active Twitch event subscriptions
+                                        <TableCell colSpan={5} className="text-center text-muted-foreground py-8">
+                                            No Twitch events available
                                         </TableCell>
                                     </TableRow>
                                 ) : (
-                                    eventSubs.map((sub) => (
-                                        <TableRow key={sub.id}>
-                                            <TableCell className="font-mono">{sub.type}</TableCell>
-                                            <TableCell>
-                                                <Badge variant={sub.status === "enabled" ? "success" : "destructive"}>
-                                                    {sub.status.replace(/_/g, " ").replace(/^./, (c) => c.toUpperCase())}
-                                                </Badge>
-                                            </TableCell>
-                                            <TableCell>{sub.version}</TableCell>
-                                            <TableCell className="text-muted-foreground">
-                                                {new Date(sub.created_at).toLocaleString()}
-                                            </TableCell>
-                                        </TableRow>
-                                    ))
+                                    eventDefinitions.map((definition) => {
+                                        const sub = subsByType.get(definition.type);
+                                        const isEnabled = sub?.status === "enabled";
+                                        return (
+                                            <TableRow key={definition.type}>
+                                                <TableCell className="font-mono">{definition.type}</TableCell>
+                                                <TableCell>
+                                                    {sub ? (
+                                                        <Badge variant={isEnabled ? "success" : "destructive"}>
+                                                            {sub.status.replace(/_/g, " ").replace(/^./, (c) => c.toUpperCase())}
+                                                        </Badge>
+                                                    ) : (
+                                                        <Badge variant="outline">Not subscribed</Badge>
+                                                    )}
+                                                </TableCell>
+                                                <TableCell>{sub?.version ?? "—"}</TableCell>
+                                                <TableCell className="text-muted-foreground">
+                                                    {sub ? new Date(sub.created_at).toLocaleString() : "—"}
+                                                </TableCell>
+                                                <TableCell className="text-right">
+                                                    <Switch
+                                                        checked={isEnabled}
+                                                        disabled={togglingEvent !== null}
+                                                        onCheckedChange={(checked) => handleEventToggle(definition.type, checked)}
+                                                    />
+                                                </TableCell>
+                                            </TableRow>
+                                        );
+                                    })
                                 )}
                             </TableBody>
                         </Table>

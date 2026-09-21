@@ -46,6 +46,11 @@ export interface EventSubSubscription {
     cost: number;
 }
 
+export interface TwitchEventDefinition {
+    type: string;
+    route: string;
+}
+
 export interface Pagination {
     page: number;
     limit: number;

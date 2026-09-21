@@ -4,6 +4,7 @@ import {
     AdminWidgetRecord,
     EventSubSubscription,
     ListResponse,
+    TwitchEventDefinition,
 } from "@/features/adminUsers/types";
 
 export const listUsers = async (
@@ -38,5 +39,24 @@ export const getUserWidgets = async (id: string): Promise<ListResponse<AdminWidg
 
 export const getUserEventSubs = async (id: string): Promise<{ data: EventSubSubscription[] }> => {
     const response = await apiClient.get<{ data: EventSubSubscription[] }>(`/api/v1/admin/users/${id}/event-subs`);
+    return response.data;
+};
+
+export const listTwitchEvents = async (): Promise<{ data: TwitchEventDefinition[] }> => {
+    const response = await apiClient.get<{ data: TwitchEventDefinition[] }>("/api/v1/admin/twitch/events");
+    return response.data;
+};
+
+export const subscribeUserEvent = async (id: string, type: string): Promise<{ data: EventSubSubscription[] }> => {
+    const response = await apiClient.post<{ data: EventSubSubscription[] }>(
+        `/api/v1/admin/users/${id}/event-subs/${encodeURIComponent(type)}`
+    );
+    return response.data;
+};
+
+export const unsubscribeUserEvent = async (id: string, type: string): Promise<{ data: EventSubSubscription[] }> => {
+    const response = await apiClient.delete<{ data: EventSubSubscription[] }>(
+        `/api/v1/admin/users/${id}/event-subs/${encodeURIComponent(type)}`
+    );
     return response.data;
 };
