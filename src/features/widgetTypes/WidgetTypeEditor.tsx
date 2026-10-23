@@ -20,7 +20,7 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
-import { Switch } from "@/components/ui/switch";
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 
 function toFormValues(widgetType: WidgetType): WidgetTypeFormValues {
@@ -32,8 +32,7 @@ function toFormValues(widgetType: WidgetType): WidgetTypeFormValues {
         icon_url: widgetType.icon_url ?? "",
         theme_color: widgetType.theme_color ?? "",
         href: widgetType.href ?? "",
-        is_active: widgetType.is_active,
-        is_display: widgetType.is_display,
+        availability: widgetType.availability,
     };
 }
 
@@ -245,23 +244,17 @@ export function WidgetTypeEditor({
                             />
                         </div>
 
-                        <div className="flex items-center gap-6">
-                            <div className="flex items-center gap-2">
-                                <Switch
-                                    id="is_active"
-                                    checked={values.is_active}
-                                    onCheckedChange={(v) => set("is_active", v)}
-                                />
-                                <Label htmlFor="is_active">Active</Label>
-                            </div>
-                            <div className="flex items-center gap-2">
-                                <Switch
-                                    id="is_display"
-                                    checked={values.is_display}
-                                    onCheckedChange={(v) => set("is_display", v)}
-                                />
-                                <Label htmlFor="is_display">Displayed</Label>
-                            </div>
+                        <div className="space-y-2">
+                            <Label htmlFor="availability">Availability</Label>
+                            <Select value={values.availability} onValueChange={(value: WidgetTypeFormValues["availability"]) => set("availability", value)}>
+                                <SelectTrigger id="availability"><SelectValue /></SelectTrigger>
+                                <SelectContent>
+                                    <SelectItem value="hide">Hide</SelectItem>
+                                    <SelectItem value="inactive">Inactive</SelectItem>
+                                    <SelectItem value="whitelist_only">Whitelist Only</SelectItem>
+                                    <SelectItem value="active">Active</SelectItem>
+                                </SelectContent>
+                            </Select>
                         </div>
 
                         <div className="flex justify-end gap-2 pt-2">
