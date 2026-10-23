@@ -7,8 +7,7 @@ export interface WidgetType {
     icon_url: string | null;
     theme_color: string | null;
     href: string | null;
-    is_active: boolean;
-    is_display: boolean;
+    availability: "hide" | "inactive" | "whitelist_only" | "active";
     created_at: string;
     updated_at: string;
 }
@@ -21,8 +20,7 @@ export interface WidgetTypeFormValues {
     icon_url: string;
     theme_color: string;
     href: string;
-    is_active: boolean;
-    is_display: boolean;
+    availability: "hide" | "inactive" | "whitelist_only" | "active";
 }
 
 export const EMPTY_WIDGET_TYPE_FORM: WidgetTypeFormValues = {
@@ -33,6 +31,5 @@ export const EMPTY_WIDGET_TYPE_FORM: WidgetTypeFormValues = {
     icon_url: "",
     theme_color: "",
     href: "",
-    is_active: true,
-    is_display: true,
+    availability: "active",
 };

@@ -10,6 +10,7 @@ import {
     getUserWidgets,
     getUserEventSubs,
     updateUserShowcase,
+    updateUserWhitelist,
     listTwitchEvents,
     subscribeUserEvent,
     unsubscribeUserEvent,
@@ -42,6 +43,7 @@ export default function UserDetailPage({ params }: { params: Promise<{ id: strin
     const [isLoading, setIsLoading] = useState(true);
     const [eventSubsError, setEventSubsError] = useState<string | null>(null);
     const [isSavingShowcase, setIsSavingShowcase] = useState(false);
+    const [isSavingWhitelist, setIsSavingWhitelist] = useState(false);
     const [togglingEvent, setTogglingEvent] = useState<string | null>(null);
 
     useEffect(() => {
@@ -97,6 +99,23 @@ export default function UserDetailPage({ params }: { params: Promise<{ id: strin
             toast.error("Failed to update showcase");
         } finally {
             setIsSavingShowcase(false);
+        }
+    }
+
+    async function handleWhitelistChange(checked: boolean) {
+        if (!user) return;
+        setIsSavingWhitelist(true);
+        const previous = user.is_whitelisted;
+        setUser({ ...user, is_whitelisted: checked });
+        try {
+            const updatedUser = await updateUserWhitelist(user.id, checked);
+            setUser(updatedUser);
+            toast.success(checked ? "Added to whitelist" : "Removed from whitelist");
+        } catch {
+            setUser(current => current ? { ...current, is_whitelisted: previous } : current);
+            toast.error("Failed to update whitelist");
+        } finally {
+            setIsSavingWhitelist(false);
         }
     }
 
@@ -192,6 +211,7 @@ export default function UserDetailPage({ params }: { params: Promise<{ id: strin
                                     />
                                 }
                             />
+                            <InfoRow label="Whitelist" value={<Switch checked={user.is_whitelisted} disabled={isSavingWhitelist} onCheckedChange={handleWhitelistChange} aria-label="Whitelist streamer" />} />
                             <InfoRow
                                 label="Consent Accepted"
                                 value={user.consent_accepted_at ? new Date(user.consent_accepted_at).toLocaleString() : "—"}

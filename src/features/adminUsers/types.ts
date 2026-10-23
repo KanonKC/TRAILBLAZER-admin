@@ -9,6 +9,7 @@ export interface AdminUserRecord {
     max_storage_mb: number;
     extra_widget_quota: number;
     is_showcase: boolean;
+    is_whitelisted: boolean;
     consent_accepted_at: string | null;
     consent_version: string | null;
     created_at: string;
