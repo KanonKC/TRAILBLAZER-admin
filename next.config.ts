@@ -2,8 +2,7 @@ import type { NextConfig } from "next";
 import path from "path";
 
 const nextConfig: NextConfig = {
-  // No `output: "standalone"` — deployment is via @opennextjs/cloudflare,
-  // which builds straight off the default `.next` output, not a standalone bundle.
+  output: "standalone",
   turbopack: {
     root: path.join(__dirname),
   },

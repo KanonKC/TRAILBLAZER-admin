@@ -141,10 +141,9 @@ export default function WidgetTypesPage() {
                                     <TableCell>{wt.cost}</TableCell>
                                     <TableCell>
                                         <div className="flex gap-1">
-                                            <Badge variant={wt.is_active ? "success" : "destructive"}>
-                                                {wt.is_active ? "Active" : "Inactive"}
+                                            <Badge variant={wt.availability === "active" ? "success" : "outline"}>
+                                                {{ hide: "Hide", inactive: "Inactive", whitelist_only: "Whitelist Only", active: "Active" }[wt.availability]}
                                             </Badge>
-                                            {!wt.is_display && <Badge variant="outline">Hidden</Badge>}
                                         </div>
                                     </TableCell>
                                     <TableCell>

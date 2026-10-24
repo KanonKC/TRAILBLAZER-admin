@@ -34,18 +34,20 @@ export default function UsersPage() {
     const [search, setSearch] = useState("");
     const [tierFilter, setTierFilter] = useState(ALL_TIERS);
     const [showcaseFilter, setShowcaseFilter] = useState(ALL_SHOWCASE);
+    const [whitelistFilter, setWhitelistFilter] = useState("all");
     const debouncedSearch = useDebouncedValue(search, 300);
     const tier = tierFilter === ALL_TIERS ? undefined : Number(tierFilter);
     const isShowcase = showcaseFilter === ALL_SHOWCASE ? undefined : showcaseFilter === "true";
+    const isWhitelisted = whitelistFilter === "all" ? undefined : whitelistFilter === "true";
 
     useEffect(() => {
         setPage(1);
-    }, [debouncedSearch, tierFilter, showcaseFilter]);
+    }, [debouncedSearch, tierFilter, showcaseFilter, whitelistFilter]);
 
     useEffect(() => {
         let cancelled = false;
         setIsLoading(true);
-        listUsers(page, PAGE_SIZE, debouncedSearch, tier, isShowcase)
+        listUsers(page, PAGE_SIZE, debouncedSearch, tier, isShowcase, isWhitelisted)
             .then((res) => {
                 if (cancelled) return;
                 setUsers(res.data);
@@ -60,7 +62,7 @@ export default function UsersPage() {
         return () => {
             cancelled = true;
         };
-    }, [page, debouncedSearch, tier, isShowcase]);
+    }, [page, debouncedSearch, tier, isShowcase, isWhitelisted]);
 
     const totalPages = Math.max(1, Math.ceil(total / PAGE_SIZE));
 
@@ -106,6 +108,14 @@ export default function UsersPage() {
                         ))}
                     </SelectContent>
                 </Select>
+                <Select value={whitelistFilter} onValueChange={setWhitelistFilter}>
+                    <SelectTrigger className="w-44"><SelectValue placeholder="Whitelist" /></SelectTrigger>
+                    <SelectContent>
+                        <SelectItem value="all">All users</SelectItem>
+                        <SelectItem value="true">Whitelisted</SelectItem>
+                        <SelectItem value="false">Not whitelisted</SelectItem>
+                    </SelectContent>
+                </Select>
             </div>
 
             <div className="rounded-lg border">
@@ -117,6 +127,7 @@ export default function UsersPage() {
                             <TableHead>Twitch ID</TableHead>
                             <TableHead>Tier</TableHead>
                             <TableHead>Showcase</TableHead>
+                            <TableHead>Whitelist</TableHead>
                             <TableHead>Widgets</TableHead>
                             <TableHead>Joined</TableHead>
                         </TableRow>
@@ -124,13 +135,13 @@ export default function UsersPage() {
                     <TableBody>
                         {isLoading ? (
                             <TableRow>
-                                <TableCell colSpan={7} className="text-center text-muted-foreground py-8">
+                                <TableCell colSpan={8} className="text-center text-muted-foreground py-8">
                                     Loading…
                                 </TableCell>
                             </TableRow>
                         ) : users.length === 0 ? (
                             <TableRow>
-                                <TableCell colSpan={7} className="text-center text-muted-foreground py-8">
+                                <TableCell colSpan={8} className="text-center text-muted-foreground py-8">
                                     No users found
                                 </TableCell>
                             </TableRow>
@@ -167,6 +178,7 @@ export default function UsersPage() {
                                             {user.is_showcase ? "Showcase" : "No"}
                                         </Badge>
                                     </TableCell>
+                                    <TableCell><Badge variant={user.is_whitelisted ? "default" : "secondary"}>{user.is_whitelisted ? "Yes" : "No"}</Badge></TableCell>
                                     <TableCell className="text-muted-foreground">{user.widget_count}</TableCell>
                                     <TableCell className="text-muted-foreground">
                                         {formatDate(user.created_at)}

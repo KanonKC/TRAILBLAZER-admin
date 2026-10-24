@@ -12,10 +12,11 @@ export const listUsers = async (
     limit: number,
     search?: string,
     tier?: number,
-    isShowcase?: boolean
+    isShowcase?: boolean,
+    isWhitelisted?: boolean
 ): Promise<ListResponse<AdminUserRecord>> => {
     const response = await apiClient.get<ListResponse<AdminUserRecord>>("/api/v1/admin/users", {
-        params: { page, limit, search: search || undefined, tier: tier ?? undefined, is_showcase: isShowcase ?? undefined },
+        params: { page, limit, search: search || undefined, tier: tier ?? undefined, is_showcase: isShowcase ?? undefined, is_whitelisted: isWhitelisted ?? undefined },
     });
     return response.data;
 };
@@ -27,6 +28,11 @@ export const getUser = async (id: string): Promise<AdminUserRecord> => {
 
 export const updateUserShowcase = async (id: string, isShowcase: boolean): Promise<AdminUserRecord> => {
     const response = await apiClient.put<AdminUserRecord>(`/api/v1/admin/users/${id}`, { is_showcase: isShowcase });
+    return response.data;
+};
+
+export const updateUserWhitelist = async (id: string, isWhitelisted: boolean): Promise<AdminUserRecord> => {
+    const response = await apiClient.put<AdminUserRecord>(`/api/v1/admin/users/${id}`, { is_whitelisted: isWhitelisted });
     return response.data;
 };
 
